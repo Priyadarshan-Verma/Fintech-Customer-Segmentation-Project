@@ -52,8 +52,6 @@ Three CSV tables were used:
 
 ###### \- Aggregate functions: `COUNT()`, `SUM()`, `AVG()`
 
-###### \- Window function: `NTILE()` → for percentile-based segmentation (Top 20% spenders)
-
 ###### \- `CASE` → to assign customers to segments
 
 ###### \- `CREATE VIEW` → to store segmentation query for reuse
@@ -261,6 +259,7 @@ Three CSV tables were used:
 
 
 ---
+
 
 
 
