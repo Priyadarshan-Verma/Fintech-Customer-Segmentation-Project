@@ -1,273 +1,419 @@
-# **# Fintech Customer Segmentation Project**
+# Fintech Customer Segmentation Project
 
+## Project Objective
 
+The goal of this project is to perform **customer segmentation for a fintech application using MySQL**.
 
-### \## Project Objective
+The project initially uses a **rule-based segmentation approach** based on transaction activity, spending, registration, and login behavior. It is then extended using **RFM (Recency, Frequency, Monetary) analysis** to provide a more behavior-driven view of customer value and engagement.
 
-##### The goal of this project is to perform \*\*customer segmentation\*\* for a fintech app using MySQL.  
-
-##### The segmentation helps understand customer behavior, spending patterns, and engagement levels, which can drive targeted marketing and product strategies.
-
-
+The analysis helps identify high-value, loyal, at-risk, inactive, and emerging customer groups that can support targeted retention, reactivation, and customer engagement strategies.
 
 ---
 
-
-
-###### \## Dataset
+## Dataset
 
 Three CSV tables were used:
 
+### 1. `stg_customers`
 
+Contains customer demographic and registration information:
 
-1\. \*\*stg\_customers\*\*
+* `customer_id`
+* `name`
+* `age`
+* `income`
+* `city`
+* `registration_date`
 
-&nbsp;  - customer\_id, name, age, income, city, registration\_date
+### 2. `stg_transactions`
 
+Contains customer transaction information:
 
+* `txn_id`
+* `customer_id`
+* `txn_date`
+* `amount`
+* `category`
 
-2\. \*\*stg\_transactions\*\*
+### 3. `stg_activity`
 
-&nbsp;  - txn\_id, customer\_id, txn\_date, amount, category
+Contains customer login activity:
 
-
-
-3\. \*\*stg\_activity\*\*
-
-&nbsp;  - customer\_id, last\_login\_date
-
-
-
----
-
-
-
-#### \## Major SQL Functions and Concepts Used
-
-###### \- `CREATE TABLE`, `ALTER TABLE` → to create staging tables and define primary keys \& foreign keys
-
-###### \- `LEFT JOIN` → to combine customer, transaction, and activity data
-
-###### \- `COALESCE()` → handle NULL values (e.g., customers with no transactions)
-
-###### \- Aggregate functions: `COUNT()`, `SUM()`, `AVG()`
-
-###### \- `CASE` → to assign customers to segments
-
-###### \- `CREATE VIEW` → to store segmentation query for reuse
-
-###### \- `GROUP BY` → for analysis like total spend per segment
-
-###### \- `ORDER BY` → to rank or sort customers
-
-
+* `customer_id`
+* `last_login_date`
 
 ---
 
+## Major SQL Functions and Concepts Used
 
-
-### \## Steps
-
-
-
-###### 1\. Create Staging Tables
-
-&nbsp;  - Created tables for customers, transactions, and activity.
-
-&nbsp;  - Assigned primary keys and foreign keys for relational integrity.
-
-
-
-###### 2\. Load Data
-
-&nbsp;  - Loaded sample/fixed data into staging tables.
-
-
-
-###### 3\. Aggregate Metrics
-
-&nbsp;  - Created a `customer\_metrics` table combining:
-
-&nbsp;    - Total transactions per customer
-
-&nbsp;    - Total amount spent
-
-&nbsp;    - Last login date
-
-&nbsp;    - Registration date
-
-
-
-###### 4\. Customer Segmentation
-
-&nbsp;  - Assigned each customer to one of five segments using `CASE`:
-
-&nbsp;    - \*\*New Customer\*\*: Registered within 30 days, < 2 transactions
-
-&nbsp;    - \*\*Inactive Customer\*\*: Last login > 90 days
-
-&nbsp;    - \*\*Power User\*\*: txn\_count > 20
-
-&nbsp;    - \*\*High-Value Customer\*\*: total\_spent >= 10,000 AND txn\_count >= 5
-
-&nbsp;    - \*\*Budget Customer\*\*: total\_spent between 1,000 and 5,000
-
-&nbsp;    - \*\*Others\*\*: remaining customers
-
-&nbsp;  - Created a view `customer\_segmentation` for reuse.
-
-
-
-###### 5\. Analysis \& Insights
-
-&nbsp;  - Count of customers per segment
-
-&nbsp;  - Total and average spend per segment
-
-&nbsp;  - List of top spenders (Power Users)
-
-&nbsp;  - List of inactive customers with txn\_count > 0
-
-&nbsp;  - Average age and income per segment
-
-
+* `CREATE DATABASE`, `CREATE TABLE` → database and staging table creation
+* `ALTER TABLE` → primary key and foreign key constraints
+* `LEFT JOIN` → combining customer, transaction, and activity data
+* `COALESCE()` → handling customers with no transactions
+* `COUNT()`, `SUM()`, `AVG()`, `MAX()` → aggregation and customer-level metrics
+* `CASE` → rule-based customer segmentation
+* `CREATE VIEW` → reusable segmentation queries
+* `GROUP BY` → segment-level analysis
+* `ORDER BY` → ranking and sorting
+* `DATEDIFF()` → calculating transaction recency
+* `NTILE()` → assigning customers into RFM score groups
+* Window functions → calculating RFM scores
+* `CONCAT()` → creating combined RFM codes
+* Common Table Expressions (`WITH`) → transaction-level aggregation
 
 ---
 
+# Project Workflow
 
+## 1. Create Staging Tables
 
-#### \## Analysis Results
+Created staging tables for customers, transactions, and activity.
 
-
-
-###### \### Total \& Average Spend per Segment
-
-
-
-| Segment             | Total Spent  | Avg Spent |
-
-|---------------------|--------------|-----------|
-
-| Power User          | 6,790,198.00 | 85,951.87 |
-
-| Inactive Customer   | 533,399.00   | 11,595.63 |
-
-| High-Value Customer | 129,361.00   | 21,560.17 |
-
-| Others              | 0.00         | 0.00      |
-
-| New Customer        | 0.00         | 0.00      |
-
-
+Primary keys and foreign keys were added to maintain relational integrity between the tables.
 
 ---
 
+## 2. Load and Validate Data
 
+Loaded the three CSV datasets into MySQL staging tables.
 
-###### \### Top 10 Power Users (Sample)
+Basic validation was performed using:
 
-
-
-| customer\_id | name          | age | income    | registration\_date | last\_login\_date | txn\_count | total\_spent | segment     |
-
-|-------------|---------------|-----|-----------|-----------------|----------------|-----------|-------------|------------|
-
-| 18          | Ankita Goyal  | 32  | 39,065.00 | 2024-05-20      | 2025-09-13     | 46        | 248,421.00  | Power User |
-
-| 14          | Ishita Varma  | 20  | 100,021.00| 2023-11-20      | 2025-09-12     | 46        | 225,623.00  | Power User |
-
-| 17          | Arjun Sahu    | 21  | 32,239.00 | 2024-03-14      | 2025-09-11     | 50        | 225,234.00  | Power User |
-
-| 28          | Priya Singh   | 28  | 52,059.00 | 2023-04-05      | 2025-09-13     | 46        | 222,055.00  | Power User |
-
-| 3           | Aditya Bansal | 35  | 45,247.00 | 2023-01-28      | 2025-09-13     | 37        | 216,147.00  | Power User |
-
-| 15          | Harsh Naidu   | 25  | 60,071.00 | 2024-12-23      | 2025-09-14     | 42        | 214,368.00  | Power User |
-
-| 11          | Manish Lal    | 26  | 26,065.00 | 2023-08-03      | 2025-09-14     | 41        | 208,173.00  | Power User |
-
-| 8           | Aditya Lal    | 36  | 119,615.00| 2024-07-19      | 2025-09-14     | 40        | 196,554.00  | Power User |
-
-| 2           | Arjun Kapoor  | 28  | 81,395.00 | 2024-03-08      | 2025-09-12     | 39        | 191,884.00  | Power User |
-
-| 4           | Abhishek Pandey | 42 | 124,987.00| 2025-08-30     | 2025-09-10     | 36        | 185,428.00  | Power User |
-
-
+* Row counts
+* Duplicate customer ID checks
+* Minimum and maximum dates
+* Age and income ranges
+* Transaction amount statistics
 
 ---
 
+## 3. Create Customer-Level Metrics
 
+Created the `customer_metrics` table by aggregating transaction data at the customer level and joining it with customer and activity information.
 
-###### \### Inactive Customers with txn\_count > 0 (Sample)
+The table contains:
 
+* Customer demographics
+* Registration date
+* Last login date
+* Transaction count
+* Total amount spent
+* **Last transaction date**
 
-
-| customer\_id | name         | last\_login\_date | txn\_count |
-
-|-------------|--------------|----------------|-----------|
-
-| 58          | Harsh Sharma | 2025-04-06     | 26        |
-
-| 59          | Chetan Joshi | 2025-04-16     | 28        |
-
-| 47          | Ananya Nair  | 2025-04-18     | 28        |
-
-| 98          | Aditi Chopra | 2025-05-08     | 22        |
-
-| 45          | Akash Verma  | 2025-05-14     | 23        |
-
-
+The addition of `last_txn_date` was important for the later RFM analysis because RFM recency should be based on the customer's **last transaction**, rather than their last login.
 
 ---
 
-###### 
+# Part 1 — Rule-Based Customer Segmentation
 
-###### \### Number of Customers per Segment
+## 4. Customer Segmentation
 
+A rule-based segmentation model was initially created using a `CASE` statement.
 
+The segments were defined as:
 
-| Segment             | num\_customers |
+* **New Customer** → Registered within 30 days and fewer than 2 transactions
+* **Inactive Customer** → Last login was more than 90 days ago
+* **Power User** → More than 20 transactions
+* **High-Value Customer** → Total spending ≥ 10,000 and at least 5 transactions
+* **Budget Customer** → Total spending between 1,000 and 5,000
+* **Others** → Remaining customers
 
-|--------------------|---------------|
+The segmentation was stored in the `customer_segmentation` view for reuse.
 
-| Power User          | 79            |
-
-| Others              | 65            |
-
-| Inactive Customer   | 46            |
-
-| High-Value Customer | 6             |
-
-| New Customer        | 4             |
-
-
+> **Note:** The original segmentation is rule-based and conditions are evaluated from top to bottom. Therefore, a customer qualifying for multiple categories is assigned to the first matching segment.
 
 ---
 
+## 5. Rule-Based Analysis
 
+The initial analysis included:
 
-#### \## Conclusion
+* Number of customers per segment
+* Total and average spending per segment
+* Average age and income per segment
+* Top customers by spending
+* Inactive customers with transaction history
 
-###### \- \*\*Power Users\*\* generate the most revenue and are highly engaged.  
+### Initial Segmentation Results
 
-###### \- \*\*Inactive Customers\*\* still have some transaction history — target for reactivation campaigns.  
+The original analysis identified **Power Users as the dominant high-activity segment**, with substantial transaction volume and spending.
 
-###### \- \*\*High-Value Customers\*\* contribute significant spend relative to their number.  
+The initial model also highlighted customers who had transaction history but had become inactive according to the login-based activity rule.
 
-###### \- \*\*New Customers\*\* and \*\*Others\*\* are smaller segments — can focus on onboarding and upselling strategies.  
+### Example: Top Power Users
 
-
+| Customer ID | Name          | Age |  Income | Registration Date | Last Login | Txn Count | Total Spent |
+| ----------: | ------------- | --: | ------: | ----------------- | ---------- | --------: | ----------: |
+|          18 | Ankita Goyal  |  32 |  39,065 | 2024-05-20        | 2025-09-13 |        46 |     248,421 |
+|          14 | Ishita Varma  |  20 | 100,021 | 2023-11-20        | 2025-09-12 |        46 |     225,623 |
+|          17 | Arjun Sahu    |  21 |  32,239 | 2024-03-14        | 2025-09-11 |        50 |     225,234 |
+|          28 | Priya Singh   |  28 |  52,059 | 2023-04-05        | 2025-09-13 |        46 |     222,055 |
+|           3 | Aditya Bansal |  35 |  45,247 | 2023-01-28        | 2025-09-13 |        37 |     216,147 |
 
 ---
 
+# Part 2 — RFM Segmentation Extension
 
+## 6. Why RFM?
 
+The original segmentation primarily relied on rules such as transaction count and last login.
 
+This creates an important limitation:
 
+> A customer can have a high historical transaction count but may not have transacted recently.
 
+For example, a customer with 30+ transactions could still be classified as a **Power User**, even if their most recent transaction was several weeks ago.
 
+To address this limitation, the project was extended using **RFM analysis**.
 
+RFM evaluates customers using three dimensions:
 
+| Metric        | Meaning                                    | Interpretation             |
+| ------------- | ------------------------------------------ | -------------------------- |
+| **Recency**   | Days since the customer's last transaction | Lower number = more recent |
+| **Frequency** | Number of transactions                     | Higher = more active       |
+| **Monetary**  | Total transaction value                    | Higher = more valuable     |
 
+---
 
+## 7. RFM Reference Date
 
+Because the dataset is historical, the RFM calculation does **not** use the current system date.
+
+Instead, recency is calculated relative to the **latest transaction date available in the dataset**.
+
+This prevents the age of the dataset from artificially making all customers appear inactive.
+
+The calculation is:
+
+```sql
+DATEDIFF(
+    (SELECT MAX(txn_date) FROM stg_transactions),
+    last_txn_date
+)
+```
+
+Therefore:
+
+* `0 days` = customer transacted on the final date in the dataset
+* `10 days` = customer's last transaction was 10 days before the dataset ended
+* `50 days` = customer's last transaction was 50 days before the dataset ended
+
+---
+
+## 8. RFM Scoring
+
+Customers were divided into five groups for each RFM dimension using `NTILE(5)`.
+
+### Recency Score
+
+Customers with more recent transactions receive higher scores:
+
+* **5** → Most recent
+* **1** → Least recent
+
+### Frequency Score
+
+Customers with more transactions receive higher scores:
+
+* **5** → Highest frequency
+* **1** → Lowest frequency
+
+### Monetary Score
+
+Customers with higher total spending receive higher scores:
+
+* **5** → Highest spending
+* **1** → Lowest spending
+
+The three scores are combined into an RFM code.
+
+For example:
+
+```text
+555 → Very recent + highly frequent + high spending
+```
+
+---
+
+## 9. RFM Segment Definitions
+
+The RFM scores were converted into business-oriented customer segments:
+
+| RFM Segment         | Definition                                                 |
+| ------------------- | ---------------------------------------------------------- |
+| **Champions**       | High Recency + High Frequency + High Monetary              |
+| **Loyal Customers** | Good Recency + Good Frequency                              |
+| **New/Promising**   | Recent customers with relatively low frequency             |
+| **At Risk**         | Low Recency but relatively high historical frequency       |
+| **Lost/Churned**    | Low Recency + Low Frequency + Low Monetary                 |
+| **Needs Attention** | Customers falling outside the stronger segment definitions |
+
+---
+
+# 10. RFM Analysis Results
+
+The RFM model produced the following distribution:
+
+| RFM Segment     | Customers | Avg. Recency (Days) | Avg. Frequency | Avg. Monetary | Total Revenue |
+| --------------- | --------: | ------------------: | -------------: | ------------: | ------------: |
+| Loyal Customers |        24 |                 9.1 |           32.6 |    ₹96,263.13 |    ₹23,10,315 |
+| Champions       |        16 |                 6.4 |           39.9 |  ₹1,38,165.75 |    ₹22,10,652 |
+| At Risk         |        20 |                31.7 |           35.0 |    ₹87,217.70 |    ₹17,44,354 |
+| Lost/Churned    |        16 |                50.6 |           21.7 |    ₹26,172.56 |     ₹4,18,761 |
+| Needs Attention |        12 |                22.7 |           22.1 |    ₹32,147.75 |     ₹3,85,773 |
+| New/Promising   |        12 |                 5.7 |           22.3 |    ₹31,925.50 |     ₹3,83,103 |
+
+### Key observations
+
+**Champions** are the strongest customer group, with the highest average frequency at **39.9 transactions** and the highest average monetary value at approximately **₹1.38 lakh**.
+
+**Loyal Customers** represent the largest segment with **24 customers** and contribute approximately **₹23.10 lakh** in total revenue.
+
+**At Risk customers are particularly important.** They have an average frequency of **35 transactions** and average spending of approximately **₹87,218**, but their average recency is **31.7 days**. This indicates that many historically valuable customers have not transacted recently.
+
+**Lost/Churned customers** have the weakest overall profile, with the highest average recency of **50.6 days**, lower frequency, and substantially lower monetary value.
+
+---
+
+# 11. Comparing Rule-Based Segmentation with RFM
+
+The most useful extension of the project was comparing the original segmentation with RFM.
+
+The original model classified customers primarily using transaction count and other fixed rules.
+
+RFM considers **when the customer last transacted**, along with transaction frequency and monetary value.
+
+### Example: Power Users Identified as At Risk
+
+The comparison identified customers who were classified as **Power Users** under the original model but were classified as **At Risk** or **Needs Attention** under RFM.
+
+Examples include:
+
+| Customer       | Old Segment | RFM Segment     | Recency | Frequency |  Monetary |
+| -------------- | ----------- | --------------- | ------: | --------: | --------: |
+| Deepika Rao    | Power User  | At Risk         | 60 days |        27 |   ₹38,154 |
+| Raj Sinha      | Power User  | At Risk         | 54 days |        31 |   ₹39,079 |
+| Pallavi Thakur | Power User  | At Risk         | 49 days |        28 |   ₹51,554 |
+| Nisha Yadav    | Power User  | Needs Attention | 48 days |        21 |   ₹39,172 |
+| Pallavi Singh  | Power User  | At Risk         | 44 days |        46 | ₹1,17,741 |
+
+### Key Insight
+
+This demonstrates a limitation of the original rule-based model:
+
+> **High historical transaction frequency does not necessarily mean that a customer is currently active.**
+
+RFM identifies customers who were historically active but whose transaction recency has deteriorated, allowing them to be targeted for retention or reactivation before they become fully inactive.
+
+---
+
+# 12. Business Recommendations
+
+### Champions
+
+Focus on retention and loyalty.
+
+Potential strategies include:
+
+* Premium benefits
+* Loyalty rewards
+* Early access to new financial products
+* Personalized offers
+
+### Loyal Customers
+
+Encourage continued engagement and movement toward the Champions segment through:
+
+* Cross-selling
+* Personalized product recommendations
+* Loyalty programs
+
+### At Risk
+
+This is the most important retention segment.
+
+Customers have demonstrated significant historical value but have not transacted recently.
+
+Potential actions:
+
+* Re-engagement campaigns
+* Personalized offers
+* Transaction incentives
+* Reminders about relevant fintech products
+
+### Lost/Churned
+
+Focus on selective win-back strategies rather than aggressive spending.
+
+Potential actions:
+
+* Targeted reactivation offers
+* Feedback surveys
+* Product or service improvement campaigns
+
+### New/Promising
+
+Focus on onboarding and increasing transaction frequency.
+
+Potential actions:
+
+* First/second transaction incentives
+* Product education
+* Personalized onboarding journeys
+
+---
+
+# 13. Project Conclusion
+
+The project demonstrates two complementary approaches to fintech customer segmentation.
+
+The **initial rule-based model** provides a simple and interpretable way to classify customers based on predefined business rules.
+
+The **RFM extension** provides a more dynamic view by combining:
+
+**Recency + Frequency + Monetary Value**
+
+The comparison shows why recency is particularly important. Several customers identified as **Power Users** under the original model were classified as **At Risk** or **Needs Attention** by RFM because their most recent transactions were relatively old.
+
+Therefore, RFM provides a stronger basis for **customer retention, reactivation, and targeted engagement**, while the original rule-based model remains useful as a simple and transparent baseline.
+
+---
+
+## Project Structure
+
+```text
+Fintech Customer Segmentation Project
+│
+├── Raw CSV Data
+│   ├── Customers
+│   ├── Transactions
+│   └── Activity
+│
+├── MySQL Data Preparation
+│   ├── Staging Tables
+│   ├── Data Validation
+│   └── Customer Metrics
+│
+├── Rule-Based Segmentation
+│   ├── Customer Segmentation View
+│   ├── Segment Analysis
+│   └── Customer Profiling
+│
+├── RFM Extension
+│   ├── Transaction-Based Recency
+│   ├── RFM Scores
+│   ├── RFM Segments
+│   └── Old vs RFM Comparison
+│
+└── Business Insights
+    ├── Customer Value
+    ├── Retention Opportunities
+    ├── At-Risk Customers
+    └── Reactivation Opportunities
+```
+
+## Skills Demonstrated
+
+**MySQL | SQL | Data Cleaning | Data Validation | Joins | CTEs | Window Functions | RFM Analysis | Customer Segmentation | Business Analytics | Customer Retention Analysis**
